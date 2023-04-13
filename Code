@@ -1,0 +1,88 @@
+const express = require("express");
+const upload = require("express-fileupload");
+const AesEncryption = require("aes-encryption");
+const crypto = require("crypto");
+const path = require("path");
+const app = express();
+const fs = require("fs");
+const aes = new AesEncryption();
+aes.setSecretKey(
+ "11122233344455566677788822244455555555555555555231231321313aaaff"
+);
+app.use(express.static(path.join(__dirname, "html")));
+app.use(upload());
+// For parsing application/json
+app.use(express.json());
+// For parsing application/x-www-form-urlencoded
+app.use(express.urlencoded({ extended: true }));
+app.get("/", (req, res) => {
+ res.send("Index Page");
+});
+app.post("/", (req, res) => {
+ if (req.files) {
+ fileText = req.files.file.data.toString();
+ console.log(fileText);
+ var mykey = crypto.createCipher(
+ "aes-" + req.body.KeySize + "-cbc",
+ req.body.SecretKey
+ );
+ var mystring = mykey.update(fileText, "utf-8", "hex");
+ mystring += mykey.final("hex");
+ res.send(mystring + " Is your Encrypted Text");
+ } else {
+ var mykey = crypto.createCipher(
+ "aes-" + req.body.KeySize + "-cbc",
+ req.body.SecretKey
+ );
+ var mystring = mykey.update(req.body.text, "utf-8", "hex");
+ mystring += mykey.final("hex");
+ res.send(mystring + " Is your Encrypted Text");
+ }
+ // fs.readFileSync(req.files.file, "utf-8", (err, data) => {
+ // console.log(data);
+ // });
+});
+app.get("/encrypt", (req, res) => {
+ const encrypted = aes.encrypt("Some Plane Text");
+ console.log(encrypted);
+ const decrypted = aes.decrypt(encrypted);
+ console.log(decrypted);
+ console.log(
+ "-------------------------------------------------------------------"
+ );
+ var mykey = crypto.createCipher("aes-128-cbc", "mypin");
+ var mystring = mykey.update("ABCDE", "utf-8", "hex");
+ mystring += mykey.final("hex");
+ console.log(mystring);
+ // res.sendFile(path.join(__dirname, "/html/index.html"));
+ res.send("hi");
+});
+app.get("/decrypt", (req, res) => {
+ // var mykey = crypto.createDecipher("aes-256-cbc", "MySecretKey");
+ // var mystr = mykey.update(
+ // 
+"381d66146c9ceb536f5abe0b59df76a9b602f149a5ce23e7153184f2c919676b8fe445ef0cdc095ac3aa52
+758551f393",
+ // "hex",
+ // "utf8"
+ // );
+ // mystr += mykey.final("utf8");
+ // console.log(mystr); //abc
+ res.sendFile(path.join(__dirname, "html/decrypt.html"));
+});
+app.post("/decrypt", (req, res) => {
+ console.log(req.body);
+ var mykey = crypto.createDecipher(
+ "aes-" + req.body.KeySize + "-cbc",
+ req.body.SecretKey
+ );
+ var mystr = mykey.update(req.body.text, "hex", "utf8");
+ mystr += mykey.final("utf8");
+ console.log(mystr); //abc
+ res.send("'" + mystr + "'" + " is your decrypted Text");
+});
+app.listen(3001, () => {
+ console.log(
+ "Server running on port 3001. Please visit http://localhost:3001"
+ );
+});
